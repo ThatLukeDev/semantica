@@ -9,10 +9,10 @@ fn main() {
         .unwrap();
 
     let input = [
-        "Green cat",
-        "Red cat",
-        "Green dog",
-        "Red dog",
+        "Green cat with a spiral tail",
+        "Red cat with a straight tail",
+        "Green dog with a straight tail",
+        "Red dog with a spiral tail",
     ];
 
     let embeddings: Vec<Vec<f32>> = model.encode(&input).unwrap();
