@@ -4,6 +4,7 @@
 
 use rust_bert::pipelines::sentence_embeddings::{self, SentenceEmbeddingsModel};
 
+/// An implementation of vector operations on Vec.
 pub mod vector;
 
 use crate::vector::Dot;
@@ -45,7 +46,7 @@ impl<'a, T> SemanticVec<'a, T> {
             if difference > 0.0 {
                 largest = embeddings[i];
 
-                if difference > DIFFERENCE {
+               if difference > DIFFERENCE {
                     buckets.clear();
                 }
 
@@ -60,10 +61,42 @@ impl<'a, T> SemanticVec<'a, T> {
         }
     }
 
-    pub fn search(&self, s: &str) -> T {
+    /// Finds the closest match to input string.
+    pub fn search(&self, s: &str) -> Option<&T> {
         let embeddings = self.model.encode(&[s])
             .unwrap();
 
-        todo!();
+        let mut buckets = vec!{};
+        let mut largest = 0.0;
+
+        for i in 0..DIMENSION {
+            let difference = embeddings[0][i] - largest;
+
+            if difference > 0.0 {
+                largest = embeddings[0][i];
+
+                if difference > DIFFERENCE {
+                    buckets.clear();
+                }
+
+                buckets.push(i);
+            }
+        }
+
+        let mut closest_match = None;
+        let mut closest_cos_dot = 0.0;
+
+        for i in buckets {
+            for item in &self.buckets[i] {
+                let cos_dot = item.0.dot(&embeddings[0]).unwrap();
+
+                if cos_dot > closest_cos_dot {
+                    closest_cos_dot = cos_dot;
+                    closest_match = Some(&item.1);
+                }
+            }
+        }
+
+        closest_match
     }
 }
