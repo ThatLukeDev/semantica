@@ -10,6 +10,8 @@ pub mod vector;
 use crate::vector::Dot;
 
 const DIMENSION: usize = 384;
+const TOLERANCE: f32 = 0.01;
+const EMBEDDING_MINIMUM: f32 = 0.1;
 
 /// An object that semantically stores T by index of strings.
 pub struct SemanticVec<T> {
@@ -38,8 +40,13 @@ impl<T: Clone> SemanticVec<T> {
     }
 
     fn quick_search(&self, ldt: f32) -> usize {
+        let len = self.ldts.len();
+        if len == 0 {
+            return 0;
+        }
+
         let mut start = 0;
-        let mut end = self.ldts.len();
+        let mut end = len - 1;
         let mut mid = (start + end) / 2;
 
         while start < end {
@@ -75,11 +82,52 @@ impl<T: Clone> SemanticVec<T> {
         let embeddings = self.model.encode(&[s])
             .unwrap().concat();
 
+        let len = self.contents.len();
+
         let ldt = embeddings.dot(&self.ldt).unwrap();
 
         let predicted = self.quick_search(ldt);
 
-        todo!();
+        let predicted_dot = embeddings.dot(&self.contents[predicted].0).unwrap();
+
+        let mut last_dot = predicted_dot;
+        let mut best_dot = predicted_dot;
+        let mut best_i = predicted;
+        let mut i: i64 = 0;
+
+        while last_dot + TOLERANCE > best_dot {
+            let low = predicted as i64 - i;
+            let high = predicted as i64 + i;
+
+            let mut best_in_part: usize = low as usize;
+            let mut best_in_part_dot: f32 = 0.0;
+
+            if low > 0 {
+                best_in_part_dot = embeddings.dot(&self.contents[low as usize].0).unwrap();
+            }
+            if high < len as i64 {
+                let part_dot = embeddings.dot(&self.contents[high as usize].0).unwrap();
+
+                if part_dot > best_in_part_dot {
+                    best_in_part = high as usize;
+                    best_in_part_dot = part_dot;
+                }
+            }
+
+            last_dot = best_in_part_dot;
+
+            if best_in_part_dot > best_dot {
+                best_i = best_in_part;
+                best_dot = best_in_part_dot;
+            }
+
+            i += 1;
+        }
+
+        match best_dot {
+            EMBEDDING_MINIMUM.. => Some(&self.contents[best_i].1),
+            _ => None,
+        }
     }
 }
 
@@ -101,4 +149,38 @@ mod tests {
     }
 
     // TODO: impl tests
+    #[test]
+    fn semantic_search() {
+        let mut db: SemanticVec<i32> = SemanticVec::new();
+
+        db.add("One", 1);
+        db.add("Two", 2);
+        db.add("Three", 3);
+        db.add("Four", 4);
+        db.add("Five", 5);
+
+        db.add("Dog", 808);
+        db.add("Cat", 247);
+
+        assert_eq!(
+            db.search("1").unwrap().clone(),
+            1
+        );
+        assert_eq!(
+            db.search("2").unwrap().clone(),
+            2
+        );
+        assert_eq!(
+            db.search("3").unwrap().clone(),
+            3
+        );
+        assert_eq!(
+            db.search("4").unwrap().clone(),
+            4
+        );
+        assert_eq!(
+            db.search("5").unwrap().clone(),
+            5
+        );
+    }
 }
