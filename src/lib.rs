@@ -10,8 +10,8 @@ pub mod vector;
 use crate::vector::Dot;
 
 const DIMENSION: usize = 384;
-const TOLERANCE: f32 = 0.01;
-const EMBEDDING_MINIMUM: f32 = 0.1;
+const TOLERANCE: f32 = 0.1;
+const EMBEDDING_MINIMUM: f32 = 0.5;
 
 /// An object that semantically stores T by index of strings.
 pub struct SemanticVec<T> {
@@ -39,14 +39,20 @@ impl<T: Clone> SemanticVec<T> {
         }
     }
 
+    fn show(&self) where T: std::fmt::Display {
+        for ldt in &self.ldts {
+            println!("{}: {}", ldt.1, self.contents[ldt.0].1);
+        }
+    }
+
     fn quick_search(&self, ldt: f32) -> usize {
         let len = self.ldts.len();
-        if len == 0 {
+        if len <= 1 {
             return 0;
         }
 
         let mut start = 0;
-        let mut end = len - 1;
+        let mut end = len;
         let mut mid = (start + end) / 2;
 
         while start < end {
@@ -80,38 +86,48 @@ impl<T: Clone> SemanticVec<T> {
     /// Finds the closest match to input string.
     pub fn search(&self, s: &str) -> Option<&T> {
         let embeddings = self.model.encode(&[s])
-            .unwrap().concat();
+            .ok()?.concat();
 
         let len = self.contents.len();
 
-        let ldt = embeddings.dot(&self.ldt).unwrap();
+        let ldt = embeddings.dot(&self.ldt).ok()?;
 
-        let predicted = self.quick_search(ldt);
+        let mut predicted = self.quick_search(ldt);
+        if predicted >= len {
+            predicted = len - 1;
+        }
 
-        let predicted_dot = embeddings.dot(&self.contents[predicted].0).unwrap();
+        let predicted_dot = embeddings.dot(&self.contents[predicted].0).ok()?;
 
         let mut last_dot = predicted_dot;
         let mut best_dot = predicted_dot;
         let mut best_i = predicted;
         let mut i: i64 = 0;
+        let mut actionable = true;
 
-        while last_dot + TOLERANCE > best_dot {
+        while last_dot + TOLERANCE > best_dot && actionable {
+            actionable = false;
+
             let low = predicted as i64 - i;
             let high = predicted as i64 + i;
 
             let mut best_in_part: usize = low as usize;
             let mut best_in_part_dot: f32 = 0.0;
 
-            if low > 0 {
-                best_in_part_dot = embeddings.dot(&self.contents[low as usize].0).unwrap();
+            if low >= 0 {
+                best_in_part_dot = embeddings.dot(&self.contents[low as usize].0).ok()?;
+
+                actionable = true;
             }
             if high < len as i64 {
-                let part_dot = embeddings.dot(&self.contents[high as usize].0).unwrap();
+                let part_dot = embeddings.dot(&self.contents[high as usize].0).ok()?;
 
                 if part_dot > best_in_part_dot {
                     best_in_part = high as usize;
                     best_in_part_dot = part_dot;
                 }
+
+                actionable = true;
             }
 
             last_dot = best_in_part_dot;
