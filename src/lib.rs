@@ -39,12 +39,6 @@ impl<T: Clone> SemanticVec<T> {
         }
     }
 
-    fn show(&self) where T: std::fmt::Display {
-        for ldt in &self.ldts {
-            println!("{}: {}", ldt.1, self.contents[ldt.0].1);
-        }
-    }
-
     fn quick_search(&self, ldt: f32) -> usize {
         let len = self.ldts.len();
         if len <= 1 {
@@ -197,6 +191,16 @@ mod tests {
         assert_eq!(
             db.search("5").unwrap().clone(),
             5
+        );
+
+        assert_eq!(
+            db.search("feline").unwrap().clone(),
+            247
+        );
+
+        assert_eq!(
+            db.search("dinosaur"),
+            None
         );
     }
 }
