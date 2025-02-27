@@ -1,1 +1,0 @@
-searchState.loadedDescShard("lib", 0, "A semantic search library written in Rust.\nA trait for any type that can have a dot product …\nThe error returned when both input sizes are not equal.\nReturns the dot product of self and other.\nReturns the argument unchanged.\nCalls <code>U::from(self)</code>.")

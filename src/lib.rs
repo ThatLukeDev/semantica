@@ -1,7 +1,5 @@
 //! A semantic search library written in Rust.
 
-#![warn(missing_docs)]
-
 use rust_bert::pipelines::sentence_embeddings::{self, SentenceEmbeddingsModel};
 
 /// An implementation of vector operations on Vec.
@@ -64,6 +62,15 @@ impl<T: Clone> SemanticVec<T> {
     }
 
     /// Adds value to SemanticVec, and recalculates linear dot product.
+    ///
+    /// ```
+    /// # use semantica::*;
+    /// let mut db: SemanticVec<i32> = SemanticVec::new();
+    /// 
+    /// db.add("One", 1);
+    /// db.add("Two", 2);
+    /// db.add("Three", 3);
+    /// ```
     pub fn add(&mut self, id: &str, val: T) {
         let embeddings = self.model.encode(&[id])
             .unwrap().concat();
@@ -78,6 +85,21 @@ impl<T: Clone> SemanticVec<T> {
     }
 
     /// Finds the closest match to input string.
+    ///
+    /// ```
+    /// # use semantica::*;
+    /// let mut db: SemanticVec<i32> = SemanticVec::new();
+    /// 
+    /// db.add("One", 1);
+    /// db.add("Two", 2);
+    /// db.add("Three", 3);
+    ///
+    /// assert_eq!(
+    ///     db.search("single")
+    ///         .unwrap_or_else(|| &0).clone(),
+    ///     1
+    /// );
+    /// ```
     pub fn search(&self, s: &str) -> Option<&T> {
         let embeddings = self.model.encode(&[s])
             .ok()?.concat();
