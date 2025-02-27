@@ -161,6 +161,14 @@ impl<T: Clone> SemanticVec<T> {
             _ => None,
         }
     }
+
+    pub fn to_binary(self) -> Vec<u8> {
+        todo!()
+    }
+
+    pub fn from_binary(input: Vec<u8>) -> Self {
+        todo!()
+    }
 }
 
 #[cfg(test)]
