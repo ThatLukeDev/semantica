@@ -163,7 +163,28 @@ impl<T: Clone> SemanticVec<T> {
     }
 
     pub fn to_binary(self) -> Vec<u8> {
-        todo!()
+        let mut output = vec![];
+        let mut values = vec![];
+
+        // reserve space for length of part 1
+        output.push(0);
+        output.push(0);
+        output.push(0);
+        output.push(0);
+
+        for item in self.contents {
+            let embeddings_u8: Vec<u8> = item.0.into_iter().map(|x| x.to_le_bytes()).flatten().collect();
+
+            output.extend(embeddings_u8);
+        }
+
+        // The length as a u32
+        output[0] = (output.len() >> 00) as u8;
+        output[1] = (output.len() >> 08) as u8;
+        output[2] = (output.len() >> 16) as u8;
+        output[3] = (output.len() >> 24) as u8;
+
+        output
     }
 
     pub fn from_binary(input: Vec<u8>) -> Self {
