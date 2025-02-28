@@ -1,3 +1,5 @@
+#![warn(missing_docs)]
+
 //! A semantic search library written in Rust.
 
 use rust_bert::pipelines::sentence_embeddings::{self, SentenceEmbeddingsModel};
@@ -5,7 +7,11 @@ use rust_bert::pipelines::sentence_embeddings::{self, SentenceEmbeddingsModel};
 /// An implementation of vector operations on Vec.
 pub mod vector;
 
+/// An implementation of vector operations on Vec.
+pub mod byte_conversion;
+
 use crate::vector::Dot;
+use crate::byte_conversion::ByteConversion;
 
 const DIMENSION: usize = 384;
 const TOLERANCE: f32 = 0.1;
@@ -161,33 +167,48 @@ impl<T: Clone> SemanticVec<T> {
             _ => None,
         }
     }
+}
 
-    pub fn to_binary(self) -> Vec<u8> {
+impl<T: ByteConversion> ByteConversion for SemanticVec<T> {
+    fn to_bytes(self) -> Vec<u8> {
         let mut output = vec![];
         let mut values = vec![];
 
-        // reserve space for length of part 1
+        // Reserve space for length of part 1
         output.push(0);
         output.push(0);
         output.push(0);
         output.push(0);
 
         for item in self.contents {
-            let embeddings_u8: Vec<u8> = item.0.into_iter().map(|x| x.to_le_bytes()).flatten().collect();
+            let embeddings_u8: Vec<u8> = item.0.into_iter().map(|x| x.to_be_bytes()).flatten().collect();
 
+            // Add embeddings (fixed len)
             output.extend(embeddings_u8);
+
+            let values_u8 = item.1.to_bytes();
+
+            // Give len of next item
+            values.extend(values_u8.len().to_be_bytes());
+
+            // Next item
+            values.extend(values_u8);
         }
 
+        let len = output.len().to_be_bytes();
+
         // The length as a u32
-        output[0] = (output.len() >> 00) as u8;
-        output[1] = (output.len() >> 08) as u8;
-        output[2] = (output.len() >> 16) as u8;
-        output[3] = (output.len() >> 24) as u8;
+        output[0] = len[0];
+        output[1] = len[1];
+        output[2] = len[2];
+        output[3] = len[3];
+
+        output.extend(values);
 
         output
     }
 
-    pub fn from_binary(input: Vec<u8>) -> Self {
+    fn from_bytes(input: Vec<u8>) -> Self {
         todo!()
     }
 }
