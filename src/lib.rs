@@ -229,14 +229,16 @@ impl<T: Clone + std::fmt::Debug + ByteConversion> ByteConversion for SemanticVec
         while out_i < start_val {
             let val_len: usize = u64::from_be_bytes(input[(val_i)..(val_i + 8)].try_into().unwrap()) as usize;
 
-            let embeddings: Vec<f32> = input[(out_i)..(out_i + DIMENSION)]
+            val_i += 8;
+
+            let embeddings: Vec<f32> = input[(out_i)..(out_i + DIMENSION * 4)]
                 .chunks_exact(4).map(|v| f32::from_be_bytes(v.try_into().unwrap())).collect();
 
             let value: T = T::from_bytes(input[(val_i)..(val_i + val_len)].to_vec());
 
             output.add_embeddings(embeddings, value);
 
-            out_i += DIMENSION * 8;
+            out_i += DIMENSION * 4;
             val_i += val_len;
         }
 
@@ -319,9 +321,19 @@ mod tests {
         original.add("Dog", 808);
         original.add("Cat", 247);
 
+        for i in 0..7 {
+            println!("{} : {}", original.ldts[i].0, original.ldts[i].1);
+        }
+        println!();
+
         let bytes = original.to_bytes();
 
         let db = SemanticVec::<i32>::from_bytes(bytes);
+
+        for i in 0..7 {
+            println!("{} : {}", db.ldts[i].0, db.ldts[i].1);
+        }
+        println!();
 
         assert_eq!(
             db.search("1").unwrap().clone(),
