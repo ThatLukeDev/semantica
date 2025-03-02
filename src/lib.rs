@@ -90,6 +90,16 @@ impl<T: Clone> SemanticVec<T> {
         self.ldts.insert(predicted, (self.contents.len() - 1, ldt));
     }
 
+    fn add_embeddings(&mut self, embeddings: Vec<f32>, val: T) {
+        let ldt = embeddings.dot(&self.ldt).unwrap();
+
+        let predicted = self.quick_search(ldt);
+
+        self.contents.push((embeddings, val));
+
+        self.ldts.insert(predicted, (self.contents.len() - 1, ldt));
+    }
+
     /// Finds the closest match to input string.
     ///
     /// ```
@@ -169,7 +179,7 @@ impl<T: Clone> SemanticVec<T> {
     }
 }
 
-impl<T: ByteConversion> ByteConversion for SemanticVec<T> {
+impl<T: Clone + std::fmt::Debug + ByteConversion> ByteConversion for SemanticVec<T> {
     fn to_bytes(self) -> Vec<u8> {
         let mut output = vec![];
         let mut values = vec![];
@@ -189,19 +199,18 @@ impl<T: ByteConversion> ByteConversion for SemanticVec<T> {
             let values_u8 = item.1.to_bytes();
 
             // Give len of next item
-            values.extend(values_u8.len().to_be_bytes());
+            values.extend((values_u8.len() as u64).to_be_bytes());
 
             // Next item
             values.extend(values_u8);
         }
 
-        let len = output.len().to_be_bytes();
+        let len = (output.len() as u64).to_be_bytes();
 
         // The length as a u32
-        output[0] = len[0];
-        output[1] = len[1];
-        output[2] = len[2];
-        output[3] = len[3];
+        for i in 0..8 {
+            output[i] = len[i];
+        }
 
         output.extend(values);
 
@@ -209,7 +218,29 @@ impl<T: ByteConversion> ByteConversion for SemanticVec<T> {
     }
 
     fn from_bytes(input: Vec<u8>) -> Self {
-        todo!()
+        let mut output = Self::new();
+
+        // The start index of our values
+        let start_val: usize = u64::from_be_bytes(input[0..8].try_into().unwrap()) as usize;
+
+        let mut out_i = 8;
+        let mut val_i = start_val;
+
+        while out_i < start_val {
+            let val_len: usize = u64::from_be_bytes(input[(val_i)..(val_i + 8)].try_into().unwrap()) as usize;
+
+            let embeddings: Vec<f32> = input[(out_i)..(out_i + DIMENSION)]
+                .chunks_exact(4).map(|v| f32::from_be_bytes(v.try_into().unwrap())).collect();
+
+            let value: T = T::from_bytes(input[(val_i)..(val_i + val_len)].to_vec());
+
+            output.add_embeddings(embeddings, value);
+
+            out_i += DIMENSION * 8;
+            val_i += val_len;
+        }
+
+        output
     }
 }
 
