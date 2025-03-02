@@ -261,7 +261,6 @@ mod tests {
         assert_eq!(db.quick_search(3.6), 2);
     }
 
-    // TODO: impl tests
     #[test]
     fn semantic_search() {
         let mut db: SemanticVec<i32> = SemanticVec::new();
@@ -274,6 +273,55 @@ mod tests {
 
         db.add("Dog", 808);
         db.add("Cat", 247);
+
+        assert_eq!(
+            db.search("1").unwrap().clone(),
+            1
+        );
+        assert_eq!(
+            db.search("2").unwrap().clone(),
+            2
+        );
+        assert_eq!(
+            db.search("3").unwrap().clone(),
+            3
+        );
+        assert_eq!(
+            db.search("4").unwrap().clone(),
+            4
+        );
+        assert_eq!(
+            db.search("5").unwrap().clone(),
+            5
+        );
+
+        assert_eq!(
+            db.search("feline").unwrap().clone(),
+            247
+        );
+
+        assert_eq!(
+            db.search("dinosaur"),
+            None
+        );
+    }
+
+    #[test]
+    fn byte_conversion() {
+        let mut original: SemanticVec<i32> = SemanticVec::new();
+
+        original.add("One", 1);
+        original.add("Two", 2);
+        original.add("Three", 3);
+        original.add("Four", 4);
+        original.add("Five", 5);
+
+        original.add("Dog", 808);
+        original.add("Cat", 247);
+
+        let bytes = original.to_bytes();
+
+        let db = SemanticVec::<i32>::from_bytes(bytes);
 
         assert_eq!(
             db.search("1").unwrap().clone(),
