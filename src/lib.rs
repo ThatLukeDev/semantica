@@ -185,10 +185,7 @@ impl<T: Clone + std::fmt::Debug + ByteConversion> ByteConversion for SemanticVec
         let mut values = vec![];
 
         // Reserve space for length of part 1
-        output.push(0);
-        output.push(0);
-        output.push(0);
-        output.push(0);
+        output.extend(vec![0; 8]);
 
         for item in self.contents {
             let embeddings_u8: Vec<u8> = item.0.into_iter().map(|x| x.to_be_bytes()).flatten().collect();
