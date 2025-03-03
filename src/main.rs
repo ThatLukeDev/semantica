@@ -43,11 +43,12 @@ fn main() {
                 search = Some(&args[i]);
             },
             "-a" | "--add" => {
+                i += 1;
+
                 while i < args.len() {
-                    i += 1;
                     append.push((&args[i], str::parse::<usize>(&args[i + 1]).unwrap()));
 
-                    i += 1;
+                    i += 2;
                 }
             }
             any => {
