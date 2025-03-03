@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 //! A semantic search library written in Rust.
 
 use rust_bert::pipelines::sentence_embeddings::{self, SentenceEmbeddingsModel};
@@ -318,19 +316,9 @@ mod tests {
         original.add("Dog", 808);
         original.add("Cat", 247);
 
-        for i in 0..7 {
-            println!("{} : {}", original.ldts[i].0, original.ldts[i].1);
-        }
-        println!();
-
         let bytes = original.to_bytes();
 
         let db = SemanticVec::<i32>::from_bytes(bytes);
-
-        for i in 0..7 {
-            println!("{} : {}", db.ldts[i].0, db.ldts[i].1);
-        }
-        println!();
 
         assert_eq!(
             db.search("1").unwrap().clone(),
