@@ -103,11 +103,11 @@ fn main() {
                     for pair in append {
                         db.add(pair.0, pair.1);
                     }
-
-                    let mut file = fs::File::create(filepath).unwrap();
-                    file.write_all(&db.to_bytes()).unwrap();
                 }
             }
+
+            let mut file = fs::File::create(filepath).unwrap();
+            file.write_all(&db.to_bytes()).unwrap();
         }
     }
 }
