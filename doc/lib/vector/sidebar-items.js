@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["SizeMismatch"],"trait":["Dot"]};
