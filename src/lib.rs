@@ -98,6 +98,46 @@ impl<T: Clone> SemanticVec<T> {
         self.ldts.insert(predicted, (self.contents.len() - 1, ldt));
     }
 
+    /// Removes the object passed.
+    ///
+    /// ```
+    /// # use semantica::*;
+    /// let mut db: SemanticVec<i32> = SemanticVec::new();
+    /// 
+    /// db.add("One", 1);
+    /// db.add("Two", 2);
+    /// db.add("Three", 3);
+    ///
+    /// db.remove(1);
+    ///
+    /// assert_eq!(
+    ///     db.search("single"),
+    ///     None
+    /// );
+    /// ```
+    pub fn remove(&mut self, val: T) where T: std::cmp::PartialEq {
+        let mut cascade = usize::MAX;
+
+        // Find the value and remove it
+        for i in 0..self.ldts.len() {
+            if self.contents[self.ldts[i].0].1 == val {
+                cascade = self.ldts[i].0;
+
+                self.contents.remove(self.ldts[i].0);
+                self.ldts.remove(i);
+
+                break;
+            }
+        }
+
+        // Update all existing values
+        for i in 0..self.ldts.len() {
+            if self.ldts[i].0 > cascade {
+                self.ldts[i].0 -= 1;
+            }
+        }
+    }
+
     /// Finds the closest match to input string.
     ///
     /// ```
@@ -256,6 +296,54 @@ mod tests {
 
         assert_eq!(db.quick_search(12.2), 3);
         assert_eq!(db.quick_search(3.6), 2);
+    }
+
+    #[test]
+    fn remove() {
+        let mut db: SemanticVec<i32> = SemanticVec::new();
+
+        db.add("One", 1);
+        db.add("Two", 2);
+        db.add("Three", 3);
+        db.add("Four", 4);
+        db.add("Five", 5);
+
+        db.add("Dog", 808);
+        db.add("Cat", 247);
+
+        db.remove(2);
+        db.remove(3);
+
+        assert_eq!(
+            db.search("1").unwrap().clone(),
+            1
+        );
+        assert_ne!(
+            db.search("2").unwrap().clone(),
+            2
+        );
+        assert_ne!(
+            db.search("3").unwrap().clone(),
+            3
+        );
+        assert_eq!(
+            db.search("4").unwrap().clone(),
+            4
+        );
+        assert_eq!(
+            db.search("5").unwrap().clone(),
+            5
+        );
+
+        assert_eq!(
+            db.search("feline").unwrap().clone(),
+            247
+        );
+
+        assert_eq!(
+            db.search("dinosaur"),
+            None
+        );
     }
 
     #[test]
