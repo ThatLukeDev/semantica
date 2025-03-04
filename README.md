@@ -2,6 +2,13 @@
 
 A semantic search engine written in Rust.
 
+The rustdoc can be found [here](https://htmlpreview.github.io/?https://github.com/ThatLukeDev/semantica/blob/main/doc/lib/index.html).
+(The model rustdoc has been removed as it is interchangable and takes a long time to compile)
+
+---
+
+![Semantic search console example](https://github.com/user-attachments/assets/45d9a664-092f-4ff4-874e-fae83897401d)
+
 ---
 
 Command line arguments:
@@ -13,5 +20,3 @@ Command line arguments:
 -a      --add       [NAME1] [VAL1]          Adds a value into the semix.
                     [NAME2?] [VAL2?] ...    (VAL_ should be any positive integer index)
 ```
-
-![Semantic search console example](https://github.com/user-attachments/assets/45d9a664-092f-4ff4-874e-fae83897401d)
