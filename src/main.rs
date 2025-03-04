@@ -12,6 +12,7 @@ const HELP_MSG: &str = r#"
 -h      --help                              Prints the default help screen.
 -f      --filepath  [PATH]                  Changes the database filepath from the default.
 -s      --search    [NAME]                  Returns the index from the specified name embeddings, or none if not found.
+-x      --remove    [VAL1] [VAL2?]          Removes a value from the semix.
 -a      --add       [NAME1] [VAL1]          Adds a value into the semix.
                     [NAME2?] [VAL2?] ...    (VAL_ should be any positive integer index)
 "#;
@@ -26,6 +27,7 @@ fn main() {
     }
 
     let mut search: Option<&str> = None;
+    let mut delete: Option<Vec<usize>> = None;
     let mut append: Vec<(&str, usize)> = vec![];
 
     let mut i = 1;
@@ -41,6 +43,19 @@ fn main() {
             "-s" | "--search" => {
                 i += 1;
                 search = Some(&args[i]);
+            },
+            "-x" | "--remove" => {
+                i += 1;
+
+                let mut removals = vec![];
+
+                while i < args.len() {
+                    removals.push(str::parse::<usize>(&args[i]).unwrap());
+
+                    i += 1;
+                }
+
+                delete = Some(removals);
             },
             "-a" | "--add" => {
                 i += 1;
@@ -78,12 +93,21 @@ fn main() {
             }
         },
         None => {
-            for pair in append {
-                db.add(pair.0, pair.1);
-            }
+            match delete {
+                Some(res) => {
+                    for id in res {
+                        db.remove(id);
+                    }
+                }
+                None => {
+                    for pair in append {
+                        db.add(pair.0, pair.1);
+                    }
 
-            let mut file = fs::File::create(filepath).unwrap();
-            file.write_all(&db.to_bytes()).unwrap();
+                    let mut file = fs::File::create(filepath).unwrap();
+                    file.write_all(&db.to_bytes()).unwrap();
+                }
+            }
         }
     }
 }
